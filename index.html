@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEMA 2026 — Quiz Interactif</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #F4F6FA; min-height: 100vh; }
+
+  .hero { background: #1B3A6B; padding: 1.5rem 1rem; text-align: center; color: white; }
+  .hero-logo { font-size: 32px; font-weight: 700; letter-spacing: 2px; margin-bottom: 4px; }
+  .hero-logo span { color: #C0392B; }
+  .hero-full { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 6px; }
+  .hero-sub { font-size: 13px; opacity: 0.88; line-height: 1.6; }
+  .hero-date { display: inline-block; margin-top: 10px; background: rgba(192,57,43,0.5); border-radius: 20px; padding: 5px 16px; font-size: 12px; font-weight: 600; }
+
+  .container { max-width: 680px; margin: 0 auto; padding: 1.25rem 1rem; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .tab-btn { padding: 8px 16px; border-radius: 20px; border: 1.5px solid #1B3A6B; background: white; color: #1B3A6B; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .tab-btn.active { background: #1B3A6B; color: white; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* QUIZ */
+  .quiz-top { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+  .score-badge { background: #1B3A6B; color: white; border-radius: 8px; padding: 6px 16px; font-size: 13px; font-weight: 600; }
+  .nqbtn { padding: 7px 14px; border-radius: 8px; border: 1.5px solid #1B3A6B; background: white; color: #1B3A6B; font-size: 13px; cursor: pointer; font-weight: 600; }
+  .cat-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .cpill { padding: 5px 12px; border-radius: 20px; border: 1.5px solid #ccc; background: white; color: #555; font-size: 12px; cursor: pointer; font-weight: 500; }
+  .cpill.sel { background: #1B3A6B; color: white; border-color: #1B3A6B; }
+  .qcard { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .qcat-tag { display: inline-block; background: #C0392B; color: white; font-size: 11px; padding: 3px 12px; border-radius: 20px; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .qtext { font-size: 15px; font-weight: 600; color: #1B3A6B; margin-bottom: 1rem; line-height: 1.55; }
+  .qopts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media(max-width:480px){ .qopts { grid-template-columns: 1fr; } }
+  .obt { padding: 10px 12px; border-radius: 8px; border: 1.5px solid #ddd; background: #F4F6FA; color: #333; font-size: 13px; cursor: pointer; text-align: left; font-family: inherit; transition: all 0.15s; }
+  .obt:hover { border-color: #1B3A6B; background: #E8EEF8; color: #1B3A6B; }
+  .obt.ok { background: #EAF3DE; border-color: #639922; color: #27500A; font-weight: 600; }
+  .obt.ko { background: #FDECEA; border-color: #C0392B; color: #7B1A13; }
+  .obt:disabled { cursor: default; }
+  .qfb { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.55; }
+  .qfb.ok { background: #EAF3DE; color: #27500A; border-left: 4px solid #639922; }
+  .qfb.ko { background: #FDECEA; color: #7B1A13; border-left: 4px solid #C0392B; }
+
+  /* PANELISTES */
+  .pan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .pan-card { background: white; border-radius: 12px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .pan-av { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; margin: 0 auto 10px; }
+  .pan-name { font-size: 14px; font-weight: 700; color: #1B3A6B; margin-bottom: 4px; }
+  .pan-role { font-size: 12px; color: #555; margin-bottom: 8px; line-height: 1.4; }
+  .pan-tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; display: inline-block; font-weight: 600; }
+
+  /* PROGRAMME */
+  .prog-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .prog-item { display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .prog-item:last-child { border-bottom: none; }
+  .prog-time { font-size: 13px; font-weight: 700; color: #1B3A6B; min-width: 58px; }
+  .prog-dot { width: 8px; height: 8px; border-radius: 50%; background: #C0392B; margin-top: 4px; flex-shrink: 0; }
+  .prog-title { font-size: 14px; font-weight: 600; color: #1B3A6B; }
+  .prog-desc { font-size: 12px; color: #777; margin-top: 2px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .info-c { background: #E8EEF8; border-radius: 8px; padding: 12px; }
+  .info-l { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .info-v { font-size: 13px; font-weight: 600; color: #1B3A6B; }
+
+  footer { text-align: center; padding: 1.5rem 0 2rem; font-size: 12px; color: #aaa; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-logo">JE<span>MA</span></div>
+  <div class="hero-full">Journée de l'Élite Managériale</div>
+  <div class="hero-sub">Sciences Économiques et de Gestion — UFHB Cocody<br>
+  Organisé par les étudiants du <strong>Master Management des Organisations (MMO)</strong></div>
+  <div class="hero-date">📅 Jeudi 21 Mai 2026 — Abidjan, Côte d'Ivoire</div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="sw('quiz',this)">🧠 Quiz</button>
+    <button class="tab-btn" onclick="sw('pan',this)">👥 Panélistes</button>
+    <button class="tab-btn" onclick="sw('prog',this)">📋 Programme</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="panel active" id="panel-quiz">
+    <div class="quiz-top">
+      <div class="score-badge" id="scr">Score : 0 / 0</div>
+      <button class="nqbtn" onclick="loadQ()">🔄 Nouvelle question</button>
+    </div>
+    <div class="cat-bar" id="catbar"></div>
+    <div class="qcard">
+      <div id="qcat" class="qcat-tag">Culture générale</div>
+      <div class="qtext" id="qt">Chargement…</div>
+      <div class="qopts" id="qo"></div>
+      <div id="qfb"></div>
+    </div>
+  </div>
+
+  <!-- PANELISTES -->
+  <div class="panel" id="panel-pan">
+    <div class="pan-grid" id="pan-grid"></div>
+  </div>
+
+  <!-- PROGRAMME -->
+  <div class="panel" id="panel-prog">
+    <div class="prog-card">
+      <div id="prog-list"></div>
+    </div>
+    <div class="info-grid">
+      <div class="info-c"><div class="info-l">Faculté</div><div class="info-v">Sciences Économiques et de Gestion (SEG)</div></div>
+      <div class="info-c"><div class="info-l">Université</div><div class="info-v">Félix Houphouët-Boigny, Cocody</div></div>
+      <div class="info-c"><div class="info-l">Organisateurs</div><div class="info-v">Étudiants Master MMO</div></div>
+      <div class="info-c"><div class="info-l">Date</div><div class="info-v">Jeudi 21 Mai 2026</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>JEMA 2026 — Master MMO · SEG · UFHB Cocody</footer>
+
+<script>
+const CATS = ['Culture générale','Finance','Management','Économie CI','Panélistes'];
+const QS = [
+  {cat:'Culture générale',q:"Quel est le nom de la monnaie officielle de la Côte d'Ivoire ?",opts:["Le Franc CFA","Le Cedi","Le Naira","Le Dalasi"],ans:0,exp:"Le Franc CFA (XOF) est la monnaie de la CI et de 7 autres pays d'Afrique de l'Ouest."},
+  {cat:'Culture générale',q:"En quelle année la Côte d'Ivoire a-t-elle accédé à l'indépendance ?",opts:["1956","1958","1960","1962"],ans:2,exp:"La Côte d'Ivoire a obtenu son indépendance le 7 août 1960."},
+  {cat:'Culture générale',q:"Quelle institution regroupe les pays d'Afrique de l'Ouest ?",opts:["CEDEAO","CEMAC","SADC","UMA"],ans:0,exp:"La CEDEAO regroupe 15 États membres d'Afrique de l'Ouest."},
+  {cat:'Culture générale',q:"Quelle est la capitale économique de la Côte d'Ivoire ?",opts:["Yamoussoukro","Bouaké","Abidjan","Daloa"],ans:2,exp:"Abidjan est la capitale économique et la plus grande ville de CI."},
+  {cat:'Culture générale',q:"Quelle est la capitale politique officielle de la Côte d'Ivoire ?",opts:["Abidjan","Yamoussoukro","Bouaké","San-Pédro"],ans:1,exp:"Yamoussoukro est la capitale politique officielle depuis 1983."},
+  {cat:'Culture générale',q:"Quel est le premier président de la Côte d'Ivoire ?",opts:["Laurent Gbagbo","Alassane Ouattara","Félix Houphouët-Boigny","Henri Konan Bédié"],ans:2,exp:"Félix Houphouët-Boigny fut le premier président de CI, de 1960 à sa mort en 1993."},
+  {cat:'Finance',q:"Que signifie l'acronyme OHADA ?",opts:["Organisation des Hommes d'Affaires d'Afrique","Organisation pour l'Harmonisation en Afrique du Droit des Affaires","Office Harmonisé Africain des Affaires","Organisation Humanitaire Africaine du Développement"],ans:1,exp:"L'OHADA harmonise le droit des affaires dans 17 États africains."},
+  {cat:'Finance',q:"Qu'est-ce que le BFR en comptabilité ?",opts:["Bilan Financier de Résultat","Besoin en Fonds de Roulement","Budget Fonctionnel de Réserve","Bénéfice Fiscal Récurrent"],ans:1,exp:"Le BFR mesure le décalage de trésorerie entre encaissements et décaissements."},
+  {cat:'Finance',q:"Qu'est-ce que la BRVM ?",opts:["Banque Régionale des Valeurs Mobilières","Bourse Régionale des Valeurs Mobilières","Bureau de Réserve et Valeurs","Banque de Refinancement UEMOA"],ans:1,exp:"La BRVM est la bourse basée à Abidjan qui sert les 8 pays de l'UEMOA."},
+  {cat:'Finance',q:"100 000 FCFA à 5% pendant 2 ans en intérêts simples = ?",opts:["5 000 FCFA","10 000 FCFA","10 250 FCFA","15 000 FCFA"],ans:1,exp:"Intérêts simples : 100 000 × 5% × 2 = 10 000 FCFA."},
+  {cat:'Finance',q:"Qu'est-ce qu'une obligation en finance ?",opts:["Une action donnant droit au vote","Un titre de propriété","Un titre de créance émis par une entité","Un dépôt bancaire garanti"],ans:2,exp:"Une obligation est un titre de créance : l'investisseur prête à l'émetteur qui rembourse avec intérêts."},
+  {cat:'Finance',q:"Quel est le rôle d'un commissaire aux comptes ?",opts:["Gérer la comptabilité quotidienne","Certifier la régularité des comptes annuels","Fixer les salaires","Décider des investissements"],ans:1,exp:"Le commissaire aux comptes certifie que les comptes donnent une image fidèle."},
+  {cat:'Finance',q:"Que signifie ROI en finance ?",opts:["Rate of Interest","Return on Investment","Revenue of Institution","Risk of Insolvency"],ans:1,exp:"Le ROI (Return on Investment) mesure la rentabilité d'un investissement."},
+  {cat:'Management',q:"Que désigne le terme 'lean management' ?",opts:["Réduire les gaspillages pour maximiser la valeur","Un management basé sur les hauts salaires","Une stratégie d'expansion rapide","Un mode de gestion très strict"],ans:0,exp:"Le lean management vise à éliminer les gaspillages pour maximiser la valeur client."},
+  {cat:'Management',q:"Qu'est-ce que la matrice BCG ?",opts:["Un outil d'analyse du portefeuille stratégique","Un tableau de bord financier","Un modèle de recrutement","Une méthode de calcul des coûts"],ans:0,exp:"La matrice BCG classe les activités selon part de marché et croissance du secteur."},
+  {cat:'Management',q:"Que signifie MBA ?",opts:["Master of Business Administration","Management Business Analytics","Master Board Administration","Managing Business Assets"],ans:0,exp:"MBA = Master of Business Administration, diplôme de gestion de niveau master."},
+  {cat:'Management',q:"Qu'est-ce que le leadership transformationnel ?",opts:["Diriger par punition et récompense","Inspirer et motiver vers une vision commune","Déléguer toutes les décisions","Gérer uniquement les chiffres"],ans:1,exp:"Le leader transformationnel inspire et crée une vision mobilisatrice pour ses équipes."},
+  {cat:'Économie CI',q:"Quel est le principal produit d'exportation de la Côte d'Ivoire ?",opts:["Le pétrole","Le cacao","L'or","Le coton"],ans:1,exp:"La CI est le 1er producteur mondial de cacao (~40% de la production globale)."},
+  {cat:'Économie CI',q:"Quelle institution gère la politique monétaire en zone UEMOA ?",opts:["La BCEAO","La Banque Mondiale","Le FMI","La BID"],ans:0,exp:"La BCEAO gère la politique monétaire des 8 pays membres de l'UEMOA."},
+  {cat:'Économie CI',q:"Le PND en Côte d'Ivoire désigne… ?",opts:["Programme National de Développement","Plan National de Distribution","Projet de Norme Durable","Protocole National de Dette"],ans:0,exp:"Le PND est le cadre stratégique national de développement à moyen terme de la CI."},
+  {cat:'Panélistes',q:"Quelle formation prépare généralement un Directeur Financier (CFO) ?",opts:["Licence en droit","MBA ou Master en Finance/Comptabilité","BTS commerce","Diplôme d'ingénieur en informatique"],ans:1,exp:"Un CFO détient généralement un MBA ou Master Finance, souvent enrichi d'une expérience en cabinet d'audit."},
+  {cat:'Panélistes',q:"Dans un panel, que signifie 'keynote speaker' ?",opts:["Un traducteur simultané","L'organisateur de l'événement","Le conférencier principal qui donne le ton","Un panéliste de dernière minute"],ans:2,exp:"Le keynote speaker ouvre ou clôt l'événement avec un discours inspirant."},
+  {cat:'Panélistes',q:"Qu'est-ce qu'un Master MMO prépare à faire ?",opts:["Gérer des projets techniques en ingénierie","Diriger et optimiser des organisations","Enseigner les mathématiques","Travailler uniquement en comptabilité"],ans:1,exp:"Le Master MMO forme des managers capables de piloter et transformer des organisations."},
+];
+
+const PANELISTES = [
+  {ini:'JK',name:'Jean-Marc Kouassi',role:'DG Cabinet KMC Consulting, Expert financier senior',tag:'Finance & Stratégie',bg:'#E8EEF8',tc:'#1B3A6B'},
+  {ini:'AF',name:'Ama Fofana',role:'Directrice RH, Groupe SIB Abidjan',tag:'Capital humain',bg:'#E1F5EE',tc:'#085041'},
+  {ini:'DA',name:'Prof. Dey Atse Frédéric',role:'Enseignant-chercheur SEG UFHB, Expert SYSCOHADA',tag:'Comptabilité',bg:'#FDECEA',tc:'#7B1A13'},
+  {ini:'KO',name:'Koffi Ouattara',role:'Entrepreneur, Fondateur StartupCI',tag:'Entrepreneuriat',bg:'#FAEEDA',tc:'#633806'},
+  {ini:'SB',name:'Sandrine Bah',role:'Analyste BRVM, Marchés financiers',tag:'Marchés financiers',bg:'#EEEDFE',tc:'#3C3489'},
+  {ini:'RC',name:'Robert Coulibaly',role:'Économiste senior, BCEAO Abidjan',tag:'Politique monétaire',bg:'#EAF3DE',tc:'#27500A'},
+];
+
+const PROGRAMME = [
+  {t:'08h00',ti:"Accueil & enregistrement",d:"Remise des badges, café de bienvenue"},
+  {t:'09h00',ti:"Cérémonie d'ouverture officielle",d:"Mot du Doyen SEG et des organisateurs MMO"},
+  {t:'09h30',ti:"Keynote : L'élite managériale africaine",d:"Discours d'ouverture par le conférencier principal"},
+  {t:'10h30',ti:"Panel 1 — Finance & Marchés",d:"BRVM, SYSCOHADA, investissements en Côte d'Ivoire"},
+  {t:'11h30',ti:"Quiz Culture Générale & Finance",d:"Animation interactive JEMA avec le public"},
+  {t:'12h30',ti:"Déjeuner networking",d:"Échanges libres entre participants et panélistes"},
+  {t:'14h00',ti:"Panel 2 — Entrepreneuriat & Innovation",d:"Start-ups, fintech, opportunités en CI"},
+  {t:'15h30',ti:"Panel 3 — Capital Humain & Leadership",d:"Soft skills, recrutement, carrière en entreprise"},
+  {t:'17h00',ti:"Clôture & remise de prix",d:"Récompenses du quiz, discours de clôture"},
+  {t:'18h00',ti:"Cocktail de fin",d:"Soirée de réseautage MMO"},
+];
+
+let score=0,total=0,selCat='Tous',answered=false;
+
+function sw(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='pan') renderPan();
+  if(id==='prog') renderProg();
+}
+
+function initCats(){
+  const bar=document.getElementById('catbar');
+  bar.innerHTML=['Tous',...CATS].map(c=>`<button class="cpill${c===selCat?' sel':''}" onclick="pickCat('${c}')">${c}</button>`).join('');
+}
+
+function pickCat(c){selCat=c;initCats();loadQ();}
+
+function loadQ(){
+  answered=false;
+  const pool=selCat==='Tous'?QS:QS.filter(q=>q.cat===selCat);
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  window._cq=q;
+  document.getElementById('qcat').textContent=q.cat;
+  document.getElementById('qt').textContent=q.q;
+  document.getElementById('qo').innerHTML=q.opts.map((o,i)=>`<button class="obt" onclick="ans(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');
+  document.getElementById('qfb').innerHTML='';
+}
+
+function ans(i){
+  if(answered)return;
+  answered=true;total++;
+  const q=window._cq;
+  const btns=document.querySelectorAll('.obt');
+  btns.forEach(b=>b.disabled=true);
+  if(i===q.ans){score++;btns[i].classList.add('ok');document.getElementById('qfb').innerHTML=`<div class="qfb ok">✅ Bonne réponse ! ${q.exp}</div>`;}
+  else{btns[i].classList.add('ko');btns[q.ans].classList.add('ok');document.getElementById('qfb').innerHTML=`<div class="qfb ko">❌ Mauvaise réponse. ${q.exp}</div>`;}
+  document.getElementById('scr').textContent=`Score : ${score} / ${total}`;
+}
+
+function renderPan(){
+  document.getElementById('pan-grid').innerHTML=PANELISTES.map(p=>`
+    <div class="pan-card">
+      <div class="pan-av" style="background:${p.bg};color:${p.tc}">${p.ini}</div>
+      <div class="pan-name">${p.name}</div>
+      <div class="pan-role">${p.role}</div>
+      <span class="pan-tag" style="background:${p.bg};color:${p.tc}">${p.tag}</span>
+    </div>`).join('');
+}
+
+function renderProg(){
+  document.getElementById('prog-list').innerHTML=PROGRAMME.map(p=>`
+    <div class="prog-item">
+      <div class="prog-time">${p.t}</div>
+      <div class="prog-dot"></div>
+      <div><div class="prog-title">${p.ti}</div><div class="prog-desc">${p.d}</div></div>
+    </div>`).join('');
+}
+
+initCats();loadQ();
+</script>
+</body>
+</html>
